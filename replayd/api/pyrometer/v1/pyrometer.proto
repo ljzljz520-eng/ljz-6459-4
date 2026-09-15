@@ -1,0 +1,29 @@
+// 红外测温摘要服务契约。
+// 测温仪侧实现该服务；复盘服务作为客户端按批次拉取摘要。
+// 当前 Go 客户端使用 JSON 编解码（字段名一致），有 protoc 时可直接生成：
+//   buf generate 或 protoc --go_out=. --go-grpc_out=. api/pyrometer/v1/pyrometer.proto
+syntax = "proto3";
+
+package pyrometer.v1;
+
+option go_package = "github.com/example/gear-hardening-replay/gen/pyrometer/v1;pyrometerv1";
+
+service PyrometerService {
+  // GetSummary 返回批次时间窗内的测温摘要点（1Hz 降采样）。
+  rpc GetSummary(GetSummaryRequest) returns (GetSummaryReply);
+}
+
+message GetSummaryRequest {
+  string batch_id = 1;
+}
+
+message TempPoint {
+  string ts         = 1; // RFC3339Nano，测温仪时钟
+  string channel    = 2; // 测温通道（如 IR-1 齿面、IR-2 齿根）
+  double temp_c     = 3;
+  double emissivity = 4; // 测温仪当时使用的发射率设定
+}
+
+message GetSummaryReply {
+  repeated TempPoint points = 1;
+}
