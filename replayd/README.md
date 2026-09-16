@@ -60,6 +60,24 @@ NATS 只订阅不发布，ClickHouse 只读写复盘数据，gRPC 仅拉取测�
 检验员 ──录入(硬化层深度+裂纹检查+结论)────────▶ inspected
 ```
 
+### NATS 事件接线约定
+
+subject：`machine.events.{机床号}.{事件类型}`（事件类型取末段），JSON 顶层字段：
+
+```json
+{
+  "ts": "2026-09-15T08:00:05Z",
+  "batch_id": "B-2026-0007",
+  "source": "cnc",
+  "payload": { "reported_z_mm": "4.200" }
+}
+```
+
+`batch_id` 是消息**顶层字段**（对应 ClickHouse `machine_events.batch_id` 列），
+适配器解析到 `domain.MachineEvent.BatchID`，驱动批次状态机；
+`payload` 只承载事件自身参数（如 `homing_done` 的 `reported_z_mm`），
+不得把 `batch_id` 放进 `payload`。时间戳非法或 JSON 损坏的消息直接丢弃并记录日志。
+
 ## 运行
 
 ```bash

@@ -87,8 +87,11 @@ const (
 )
 
 // MachineEvent 机床事件。
+// BatchID 为线上消息顶层字段（NATS JSON batch_id），与业务 payload 分离；
+// payload 只承载事件类型自身的参数（如 homing_done 的 reported_z_mm）。
 type MachineEvent struct {
 	Ts      time.Time         `json:"ts"`
+	BatchID string            `json:"batch_id"`
 	Source  string            `json:"source"` // cnc / plc / scanner
 	Type    string            `json:"type"`
 	Payload map[string]string `json:"payload,omitempty"`

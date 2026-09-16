@@ -58,12 +58,19 @@ func main() {
 		go func() {
 			err := c.Subscribe(ctx, func(ev domain.MachineEvent) error {
 				// 事件驱动批次状态推进（只读消费，不回发任何指令）
-				batchID := ev.Payload["batch_id"]
+				if ev.BatchID == "" {
+					log.Printf("nats: 事件缺少 batch_id，已忽略 type=%s source=%s", ev.Type, ev.Source)
+					return nil
+				}
 				switch ev.Type {
 				case domain.EvScanStart:
-					_ = svc.MarkRunning(batchID)
+					if err := svc.MarkRunning(ev.BatchID); err != nil {
+						log.Printf("nats: scan_start 批次 %s 状态推进失败: %v", ev.BatchID, err)
+					}
 				case domain.EvProgramEnd:
-					_ = svc.MarkDone(batchID)
+					if err := svc.MarkDone(ev.BatchID); err != nil {
+						log.Printf("nats: program_end 批次 %s 状态推进失败: %v", ev.BatchID, err)
+					}
 				}
 				return nil
 			})
